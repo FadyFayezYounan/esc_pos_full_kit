@@ -56,8 +56,10 @@ class Receipt {
     this.openDrawer = false,
     this.beep = false,
     this.dither = DitherMode.auto,
+    this.supersample = 3,
     this.strictFeatures = false,
-  }) : assert(feedBeforeCut >= 0, 'feedBeforeCut must be non-negative');
+  }) : assert(feedBeforeCut >= 0, 'feedBeforeCut must be non-negative'),
+       assert(supersample >= 1, 'supersample must be >= 1');
 
   /// The elements that make up this receipt.
   final List<PrintElement> children;
@@ -79,6 +81,18 @@ class Receipt {
 
   /// The monochrome conversion strategy.
   final DitherMode dither;
+
+  /// Oversampling factor for rasterization.
+  ///
+  /// The widget tree is painted at `supersample` times the printer's dot
+  /// resolution and then box-filter downsampled back to native resolution
+  /// before monochrome conversion. This preserves antialiasing as true
+  /// grayscale, which Floyd-Steinberg dithering can turn into crisp output.
+  ///
+  /// `1` disables supersampling (fastest, matches the pre-quality behavior).
+  /// `2`-`4` trade quadratic CPU/memory for sharper glyphs. `3` is the sweet
+  /// spot for 203 DPI thermal printers.
+  final int supersample;
 
   /// Whether unsupported optional features should throw instead of logging.
   final bool strictFeatures;

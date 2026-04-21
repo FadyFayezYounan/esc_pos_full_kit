@@ -64,11 +64,23 @@ final class ReceiptRasterizer {
       );
       final int imageHeight = measuredSize.height.ceil().clamp(1, 1 << 20);
 
+      final int supersample = receipt.supersample < 1 ? 1 : receipt.supersample;
+      final int scaledWidth = paperWidth * supersample;
+      final int scaledHeight = imageHeight * supersample;
+
       final ui.PictureRecorder recorder = ui.PictureRecorder();
       final ui.Canvas canvas = ui.Canvas(
         recorder,
-        ui.Rect.fromLTWH(0, 0, paperWidth.toDouble(), measuredSize.height),
+        ui.Rect.fromLTWH(
+          0,
+          0,
+          scaledWidth.toDouble(),
+          scaledHeight.toDouble(),
+        ),
       );
+      if (supersample != 1) {
+        canvas.scale(supersample.toDouble());
+      }
       canvas.drawColor(context.background, BlendMode.src);
       root.paint(
         canvas,
@@ -77,27 +89,53 @@ final class ReceiptRasterizer {
       );
 
       final ui.Picture picture = recorder.endRecording();
-      final ui.Image image = await picture.toImage(paperWidth, imageHeight);
-      final ByteData? rgbaBytes = await image.toByteData(
+      final ui.Image highResImage;
+      try {
+        highResImage = await picture.toImage(scaledWidth, scaledHeight);
+      } finally {
+        picture.dispose();
+      }
+
+      final ByteData? highResBytes = await highResImage.toByteData(
         format: ui.ImageByteFormat.rawRgba,
       );
-      if (rgbaBytes == null) {
-        image.dispose();
+      if (highResBytes == null) {
+        highResImage.dispose();
         throw const RasterizationException(
           'Failed to read rasterized image bytes.',
         );
       }
 
-      final DitherMode mode = _resolveDitherMode(receipt.dither, root);
+      final ByteData nativeBytes;
+      final ui.Image previewImage;
+      if (supersample == 1) {
+        nativeBytes = highResBytes;
+        previewImage = highResImage;
+      } else {
+        nativeBytes = _downsampleRgbaBoxFilter(
+          highResBytes,
+          scaledWidth,
+          scaledHeight,
+          supersample,
+        );
+        highResImage.dispose();
+        previewImage = await _imageFromRgba(
+          nativeBytes,
+          paperWidth,
+          imageHeight,
+        );
+      }
+
+      final DitherMode mode = _resolveDitherMode(receipt.dither);
       final Uint8List monochromeBits = MonochromeConverter.convert(
-        rgbaBytes,
+        nativeBytes,
         paperWidth,
         imageHeight,
         mode: mode,
       );
 
       return RasterizedReceipt(
-        image: image,
+        image: previewImage,
         monochromeBits: monochromeBits,
         widthPixels: paperWidth,
         heightPixels: imageHeight,
@@ -114,24 +152,89 @@ final class ReceiptRasterizer {
     }
   }
 
-  DitherMode _resolveDitherMode(DitherMode configuredMode, PrintElement root) {
+  /// Averages each [factor]x[factor] block of [src] into a single destination
+  /// pixel, returning RGBA bytes at `srcWidth / factor` by `srcHeight / factor`.
+  static ByteData _downsampleRgbaBoxFilter(
+    ByteData src,
+    int srcWidth,
+    int srcHeight,
+    int factor,
+  ) {
+    final int dstWidth = srcWidth ~/ factor;
+    final int dstHeight = srcHeight ~/ factor;
+    final Uint8List dst = Uint8List(dstWidth * dstHeight * 4);
+    final int blockPixels = factor * factor;
+    final int srcStride = srcWidth * 4;
+
+    for (int dy = 0; dy < dstHeight; dy += 1) {
+      final int srcY0 = dy * factor;
+      for (int dx = 0; dx < dstWidth; dx += 1) {
+        final int srcX0 = dx * factor;
+        int rSum = 0;
+        int gSum = 0;
+        int bSum = 0;
+        int aSum = 0;
+        for (int by = 0; by < factor; by += 1) {
+          final int rowOffset = (srcY0 + by) * srcStride;
+          for (int bx = 0; bx < factor; bx += 1) {
+            final int i = rowOffset + ((srcX0 + bx) * 4);
+            rSum += src.getUint8(i);
+            gSum += src.getUint8(i + 1);
+            bSum += src.getUint8(i + 2);
+            aSum += src.getUint8(i + 3);
+          }
+        }
+        final int dstIndex = ((dy * dstWidth) + dx) * 4;
+        dst[dstIndex] = rSum ~/ blockPixels;
+        dst[dstIndex + 1] = gSum ~/ blockPixels;
+        dst[dstIndex + 2] = bSum ~/ blockPixels;
+        dst[dstIndex + 3] = aSum ~/ blockPixels;
+      }
+    }
+
+    return ByteData.sublistView(dst);
+  }
+
+  static Future<ui.Image> _imageFromRgba(
+    ByteData rgba,
+    int width,
+    int height,
+  ) async {
+    final ui.ImmutableBuffer buffer = await ui.ImmutableBuffer.fromUint8List(
+      rgba.buffer.asUint8List(
+        rgba.offsetInBytes,
+        rgba.lengthInBytes,
+      ),
+    );
+    try {
+      final ui.ImageDescriptor descriptor = ui.ImageDescriptor.raw(
+        buffer,
+        width: width,
+        height: height,
+        pixelFormat: ui.PixelFormat.rgba8888,
+      );
+      try {
+        final ui.Codec codec = await descriptor.instantiateCodec();
+        try {
+          final ui.FrameInfo frame = await codec.getNextFrame();
+          return frame.image;
+        } finally {
+          codec.dispose();
+        }
+      } finally {
+        descriptor.dispose();
+      }
+    } finally {
+      buffer.dispose();
+    }
+  }
+
+  DitherMode _resolveDitherMode(DitherMode configuredMode) {
     return switch (configuredMode) {
-      DitherMode.auto => _containsImage(root) ? DitherMode.on : DitherMode.off,
+      DitherMode.auto => DitherMode.on,
       DitherMode.off => DitherMode.off,
       DitherMode.on => DitherMode.on,
     };
-  }
-
-  bool _containsImage(PrintElement element) {
-    if (element is ImageElement) {
-      return true;
-    }
-    for (final PrintElement child in _childElements(element)) {
-      if (_containsImage(child)) {
-        return true;
-      }
-    }
-    return false;
   }
 
   List<ImageElement> _collectImageElements(PrintElement element) {
