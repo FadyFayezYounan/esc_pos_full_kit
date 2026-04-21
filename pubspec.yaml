@@ -1,5 +1,5 @@
 name: esc_pos_full_kit
-description: "A new Flutter package project."
+description: "A Flutter package for raster-first ESC/POS thermal receipt printing."
 version: 0.0.1
 homepage:
 
@@ -10,6 +10,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  barcode: ^2.2.8
+  meta: ^1.12.0
+  qr: ^3.0.2
 
 dev_dependencies:
   flutter_test:
