@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:esc_pos_full_kit/esc_pos_full_kit.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 void main() {
   runApp(const ReceiptExampleApp());
@@ -46,6 +47,18 @@ const List<_DemoLineItem> _demoLineItems = <_DemoLineItem>[
   ),
 ];
 
+TextStyle _receiptTextStyle({
+  required double fontSize,
+  FontWeight fontWeight = FontWeight.normal,
+  double? letterSpacing,
+}) {
+  return GoogleFonts.robotoMono(
+    fontSize: fontSize,
+    fontWeight: fontWeight,
+    letterSpacing: letterSpacing,
+  );
+}
+
 /// A runnable demo app for `esc_pos_full_kit`.
 class ReceiptExampleApp extends StatelessWidget {
   /// Creates the example app.
@@ -57,35 +70,42 @@ class ReceiptExampleApp extends StatelessWidget {
       seedColor: const Color(0xFF9C5A2A),
       brightness: Brightness.light,
     );
+    final ThemeData baseTheme = ThemeData(
+      useMaterial3: true,
+      colorScheme: colorScheme,
+      scaffoldBackgroundColor: const Color(0xFFF8F2E9),
+      cardTheme: CardThemeData(
+        color: Colors.white,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(28),
+          side: BorderSide(color: colorScheme.outlineVariant),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: const Color(0xFFFFFBF6),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(18)),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: BorderSide(color: colorScheme.outlineVariant),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: BorderSide(color: colorScheme.primary, width: 1.4),
+        ),
+      ),
+    );
+    final TextTheme monoTextTheme = GoogleFonts.robotoMonoTextTheme(
+      baseTheme.textTheme,
+    );
 
     return MaterialApp(
       title: 'ESC POS Full Kit Example',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: colorScheme,
-        scaffoldBackgroundColor: const Color(0xFFF8F2E9),
-        cardTheme: CardThemeData(
-          color: Colors.white,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(28),
-            side: BorderSide(color: colorScheme.outlineVariant),
-          ),
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: const Color(0xFFFFFBF6),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(18)),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(18),
-            borderSide: BorderSide(color: colorScheme.outlineVariant),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(18),
-            borderSide: BorderSide(color: colorScheme.primary, width: 1.4),
-          ),
-        ),
+      theme: baseTheme.copyWith(
+        textTheme: monoTextTheme,
+        primaryTextTheme: monoTextTheme,
       ),
       home: const _ReceiptDemoPage(),
     );
@@ -154,7 +174,7 @@ class _ReceiptDemoPageState extends State<_ReceiptDemoPage> {
         TextElement(
           merchantName,
           textAlign: TextAlign.center,
-          style: const TextStyle(
+          style: _receiptTextStyle(
             fontSize: 34,
             fontWeight: FontWeight.w800,
             letterSpacing: 0.3,
@@ -164,7 +184,7 @@ class _ReceiptDemoPageState extends State<_ReceiptDemoPage> {
         TextElement(
           _taglineFor(_language),
           textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
+          style: _receiptTextStyle(fontSize: 20, fontWeight: FontWeight.w500),
         ),
         const SpacerElement(height: 16),
         const DividerElement(dashStyle: DashStyle.dashed),
@@ -172,7 +192,7 @@ class _ReceiptDemoPageState extends State<_ReceiptDemoPage> {
         TextElement(
           _headlineFor(_language),
           textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w700),
+          style: _receiptTextStyle(fontSize: 28, fontWeight: FontWeight.w700),
         ),
         const SpacerElement(height: 14),
         _buildTableHeader(),
@@ -202,14 +222,14 @@ class _ReceiptDemoPageState extends State<_ReceiptDemoPage> {
         TextElement(
           _labelFor(english: 'Order ID', arabic: 'رقم الطلب'),
           textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+          style: _receiptTextStyle(fontSize: 20, fontWeight: FontWeight.w700),
         ),
         const SpacerElement(height: 6),
-        const TextElement(
+        TextElement(
           '#A-1024-78',
           textAlign: TextAlign.center,
           textDirection: ui.TextDirection.ltr,
-          style: TextStyle(
+          style: _receiptTextStyle(
             fontSize: 24,
             fontWeight: FontWeight.w600,
             letterSpacing: 1.8,
@@ -227,7 +247,7 @@ class _ReceiptDemoPageState extends State<_ReceiptDemoPage> {
         TextElement(
           _footerFor(_language),
           textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+          style: _receiptTextStyle(fontSize: 18, fontWeight: FontWeight.w500),
         ),
       ],
     );
@@ -668,7 +688,7 @@ class _ReceiptDemoPageState extends State<_ReceiptDemoPage> {
                         : _language == _ReceiptLanguage.arabic
                         ? item.arabicName
                         : '${item.arabicName} / ${item.englishName}',
-                    style: const TextStyle(
+                    style: _receiptTextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w500,
                     ),
@@ -680,7 +700,7 @@ class _ReceiptDemoPageState extends State<_ReceiptDemoPage> {
                     'x${item.quantity}',
                     textAlign: TextAlign.center,
                     textDirection: ui.TextDirection.ltr,
-                    style: const TextStyle(fontSize: 22),
+                    style: _receiptTextStyle(fontSize: 22),
                   ),
                 ),
                 RowCell(
@@ -688,7 +708,7 @@ class _ReceiptDemoPageState extends State<_ReceiptDemoPage> {
                     _currency(item.total),
                     textAlign: TextAlign.right,
                     textDirection: ui.TextDirection.ltr,
-                    style: const TextStyle(
+                    style: _receiptTextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
                     ),
@@ -709,7 +729,7 @@ class _ReceiptDemoPageState extends State<_ReceiptDemoPage> {
         RowCell(
           TextElement(
             _labelFor(english: 'Item', arabic: 'الصنف'),
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+            style: _receiptTextStyle(fontSize: 20, fontWeight: FontWeight.w700),
           ),
           flex: 2,
         ),
@@ -717,14 +737,14 @@ class _ReceiptDemoPageState extends State<_ReceiptDemoPage> {
           TextElement(
             _labelFor(english: 'Qty', arabic: 'الكمية'),
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+            style: _receiptTextStyle(fontSize: 20, fontWeight: FontWeight.w700),
           ),
         ),
         RowCell(
           TextElement(
             _labelFor(english: 'Price', arabic: 'السعر'),
             textAlign: TextAlign.right,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+            style: _receiptTextStyle(fontSize: 20, fontWeight: FontWeight.w700),
           ),
         ),
       ],
@@ -738,7 +758,7 @@ class _ReceiptDemoPageState extends State<_ReceiptDemoPage> {
     required double value,
     bool isEmphasized = false,
   }) {
-    final TextStyle style = TextStyle(
+    final TextStyle style = _receiptTextStyle(
       fontSize: isEmphasized ? 26 : 22,
       fontWeight: isEmphasized ? FontWeight.w800 : FontWeight.w600,
     );
