@@ -1,5 +1,5 @@
 name: esc_pos_full_kit
-description: "A Flutter package for raster-first ESC/POS thermal receipt printing."
+description: "A Flutter package for raster-first thermal receipt printing."
 version: 0.0.1
 homepage:
 

@@ -17,7 +17,10 @@ final List<PrinterProfile> _demoProfiles = List<PrinterProfile>.unmodifiable(
           (PrinterProfile profile) =>
               profile.media.widthPixels != null &&
               profile.features.bitImageRaster &&
-              !profile.features.starCommands,
+              switch (profile.commandDialect) {
+                PrinterCommandDialect.escPos => true,
+                PrinterCommandDialect.starPrnt => true,
+              },
         )
         .toList(growable: false);
 

@@ -7,7 +7,7 @@ import 'package:meta/meta.dart';
 import '../contracts/print_element.dart';
 import '../contracts/printer_profile.dart';
 import '../contracts/printer_transport.dart';
-import '../encoder/esc_pos_encoder.dart';
+import '../encoder/receipt_encoder.dart';
 import '../rasterizer/monochrome_converter.dart';
 import '../rasterizer/receipt_rasterizer.dart';
 
@@ -125,7 +125,7 @@ class Receipt {
     );
 
     try {
-      final List<int> bytes = EscPosEncoder.assembleReceipt(
+      final List<int> bytes = ReceiptEncoders.assembleReceipt(
         rasterizedReceipt,
         profile,
         this,

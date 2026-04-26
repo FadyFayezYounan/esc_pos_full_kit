@@ -1,6 +1,15 @@
 import 'package:meta/meta.dart';
 
-/// A typed description of a printer's ESC/POS capabilities.
+/// The command language used to encode bytes for a printer profile.
+enum PrinterCommandDialect {
+  /// Epson-compatible ESC/POS commands.
+  escPos,
+
+  /// Star Micronics StarPRNT commands.
+  starPrnt,
+}
+
+/// A typed description of a printer's command capabilities.
 @immutable
 class PrinterProfile {
   /// Creates a new [PrinterProfile].
@@ -8,6 +17,7 @@ class PrinterProfile {
     required this.id,
     required this.name,
     required this.vendor,
+    this.commandDialect = PrinterCommandDialect.escPos,
     this.description = '',
     required this.codePages,
     required this.colors,
@@ -24,6 +34,9 @@ class PrinterProfile {
 
   /// The printer vendor name.
   final String vendor;
+
+  /// The command language used when encoding this profile's byte stream.
+  final PrinterCommandDialect commandDialect;
 
   /// An optional description of the device.
   final String description;
@@ -54,7 +67,7 @@ class PrinterColors {
   final Map<int, String> entries;
 }
 
-/// ESC/POS feature support flags for a printer.
+/// Command feature support flags for a printer.
 @immutable
 class PrinterFeatures {
   /// Creates a new [PrinterFeatures].

@@ -14,6 +14,8 @@ export 'src/elements/row_element.dart';
 export 'src/elements/spacer_element.dart';
 export 'src/elements/text_element.dart';
 export 'src/encoder/esc_pos_encoder.dart';
+export 'src/encoder/receipt_encoder.dart';
+export 'src/encoder/star_prnt_encoder.dart';
 export 'src/exceptions.dart';
 export 'src/profiles/printer_profile_models.dart';
 export 'src/profiles/printer_profiles.dart';

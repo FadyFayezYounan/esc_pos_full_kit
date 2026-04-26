@@ -949,6 +949,37 @@ const PrinterProfile sp2000 = PrinterProfile(
   media: PrinterMedia(widthMm: null, widthPixels: null),
 );
 
+const PrinterProfile mcp30 = PrinterProfile(
+  id: 'MCP30',
+  name: 'mC-Print3 / MCP30',
+  vendor: 'Star Micronics',
+  commandDialect: PrinterCommandDialect.starPrnt,
+  description:
+      'Star mC-Print3 / MCP30 thermal printer series using StarPRNT emulation',
+  codePages: <int, String>{0: 'CP437'},
+  colors: PrinterColors(<int, String>{0: 'black'}),
+  features: PrinterFeatures(
+    barcodeA: true,
+    barcodeB: true,
+    bitImageColumn: true,
+    bitImageRaster: true,
+    graphics: true,
+    highDensity: true,
+    paperFullCut: true,
+    paperPartCut: true,
+    pdf417Code: true,
+    pulseBel: false,
+    pulseStandard: true,
+    qrCode: true,
+    starCommands: true,
+  ),
+  fonts: <int, PrinterFont>{
+    0: PrinterFont('Font A', columns: 48),
+    1: PrinterFont('Font B', columns: 64),
+  },
+  media: PrinterMedia(widthMm: 72, widthPixels: 576),
+);
+
 const PrinterProfile sunmiV2 = PrinterProfile(
   id: 'Sunmi-V2',
   name: 'Sunmi V2',
@@ -1918,6 +1949,7 @@ const List<PrinterProfile> allBuiltInPrinterProfiles = <PrinterProfile>[
   pos_5890,
   rp326,
   sp2000,
+  mcp30,
   sunmiV2,
   tep_200M,
   tmP80,
