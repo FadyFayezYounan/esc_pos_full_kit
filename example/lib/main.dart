@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 void main() {
+  GoogleFonts.config.allowRuntimeFetching = false;
   runApp(const ReceiptExampleApp());
 }
 
@@ -48,11 +49,13 @@ const List<_DemoLineItem> _demoLineItems = <_DemoLineItem>[
 ];
 
 TextStyle _receiptTextStyle({
+  required String fontFamily,
   required double fontSize,
   FontWeight fontWeight = FontWeight.normal,
   double? letterSpacing,
 }) {
-  return GoogleFonts.robotoMono(
+  return TextStyle(
+    fontFamily: fontFamily,
     fontSize: fontSize,
     fontWeight: fontWeight,
     letterSpacing: letterSpacing,
@@ -66,6 +69,7 @@ class ReceiptExampleApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final String robotoMonoFamily = GoogleFonts.robotoMono().fontFamily!;
     final ColorScheme colorScheme = ColorScheme.fromSeed(
       seedColor: const Color(0xFF9C5A2A),
       brightness: Brightness.light,
@@ -96,8 +100,10 @@ class ReceiptExampleApp extends StatelessWidget {
         ),
       ),
     );
-    final TextTheme monoTextTheme = GoogleFonts.robotoMonoTextTheme(
-      baseTheme.textTheme,
+    final TextTheme monoTextTheme = baseTheme.textTheme.apply(
+      fontFamily: robotoMonoFamily,
+      bodyColor: baseTheme.colorScheme.onSurface,
+      displayColor: baseTheme.colorScheme.onSurface,
     );
 
     return MaterialApp(
@@ -133,6 +139,7 @@ class _ReceiptDemoPageState extends State<_ReceiptDemoPage> {
   late final TextEditingController _portController;
 
   late PrinterProfile _selectedProfile;
+  late String _robotoMonoFamily;
   _ReceiptLanguage _language = _ReceiptLanguage.mixed;
   bool _isPrinting = false;
   String? _statusMessage;
@@ -143,6 +150,7 @@ class _ReceiptDemoPageState extends State<_ReceiptDemoPage> {
     _merchantController = TextEditingController(text: 'Wasfa Roastery');
     _hostController = TextEditingController(text: '192.168.8.52');
     _portController = TextEditingController(text: '9100');
+    _robotoMonoFamily = GoogleFonts.robotoMono().fontFamily!;
     _selectedProfile = _demoProfiles.firstWhere(
       (PrinterProfile profile) => profile.id == PrinterProfiles.tmT88V.id,
       orElse: () => _demoProfiles.first,
@@ -175,6 +183,7 @@ class _ReceiptDemoPageState extends State<_ReceiptDemoPage> {
           merchantName,
           textAlign: TextAlign.center,
           style: _receiptTextStyle(
+            fontFamily: _robotoMonoFamily,
             fontSize: 34,
             fontWeight: FontWeight.w800,
             letterSpacing: 0.3,
@@ -184,7 +193,11 @@ class _ReceiptDemoPageState extends State<_ReceiptDemoPage> {
         TextElement(
           _taglineFor(_language),
           textAlign: TextAlign.center,
-          style: _receiptTextStyle(fontSize: 20, fontWeight: FontWeight.w500),
+          style: _receiptTextStyle(
+            fontFamily: _robotoMonoFamily,
+            fontSize: 20,
+            fontWeight: FontWeight.w500,
+          ),
         ),
         const SpacerElement(height: 16),
         const DividerElement(dashStyle: DashStyle.dashed),
@@ -192,7 +205,11 @@ class _ReceiptDemoPageState extends State<_ReceiptDemoPage> {
         TextElement(
           _headlineFor(_language),
           textAlign: TextAlign.center,
-          style: _receiptTextStyle(fontSize: 28, fontWeight: FontWeight.w700),
+          style: _receiptTextStyle(
+            fontFamily: _robotoMonoFamily,
+            fontSize: 28,
+            fontWeight: FontWeight.w700,
+          ),
         ),
         const SpacerElement(height: 14),
         _buildTableHeader(),
@@ -222,7 +239,11 @@ class _ReceiptDemoPageState extends State<_ReceiptDemoPage> {
         TextElement(
           _labelFor(english: 'Order ID', arabic: 'رقم الطلب'),
           textAlign: TextAlign.center,
-          style: _receiptTextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+          style: _receiptTextStyle(
+            fontFamily: _robotoMonoFamily,
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+          ),
         ),
         const SpacerElement(height: 6),
         TextElement(
@@ -230,6 +251,7 @@ class _ReceiptDemoPageState extends State<_ReceiptDemoPage> {
           textAlign: TextAlign.center,
           textDirection: ui.TextDirection.ltr,
           style: _receiptTextStyle(
+            fontFamily: _robotoMonoFamily,
             fontSize: 24,
             fontWeight: FontWeight.w600,
             letterSpacing: 1.8,
@@ -247,7 +269,11 @@ class _ReceiptDemoPageState extends State<_ReceiptDemoPage> {
         TextElement(
           _footerFor(_language),
           textAlign: TextAlign.center,
-          style: _receiptTextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+          style: _receiptTextStyle(
+            fontFamily: _robotoMonoFamily,
+            fontSize: 18,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ],
     );
@@ -689,6 +715,7 @@ class _ReceiptDemoPageState extends State<_ReceiptDemoPage> {
                         ? item.arabicName
                         : '${item.arabicName} / ${item.englishName}',
                     style: _receiptTextStyle(
+                      fontFamily: _robotoMonoFamily,
                       fontSize: 22,
                       fontWeight: FontWeight.w500,
                     ),
@@ -700,7 +727,10 @@ class _ReceiptDemoPageState extends State<_ReceiptDemoPage> {
                     'x${item.quantity}',
                     textAlign: TextAlign.center,
                     textDirection: ui.TextDirection.ltr,
-                    style: _receiptTextStyle(fontSize: 22),
+                    style: _receiptTextStyle(
+                      fontFamily: _robotoMonoFamily,
+                      fontSize: 22,
+                    ),
                   ),
                 ),
                 RowCell(
@@ -709,6 +739,7 @@ class _ReceiptDemoPageState extends State<_ReceiptDemoPage> {
                     textAlign: TextAlign.right,
                     textDirection: ui.TextDirection.ltr,
                     style: _receiptTextStyle(
+                      fontFamily: _robotoMonoFamily,
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
                     ),
@@ -729,7 +760,11 @@ class _ReceiptDemoPageState extends State<_ReceiptDemoPage> {
         RowCell(
           TextElement(
             _labelFor(english: 'Item', arabic: 'الصنف'),
-            style: _receiptTextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+            style: _receiptTextStyle(
+              fontFamily: _robotoMonoFamily,
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+            ),
           ),
           flex: 2,
         ),
@@ -737,14 +772,22 @@ class _ReceiptDemoPageState extends State<_ReceiptDemoPage> {
           TextElement(
             _labelFor(english: 'Qty', arabic: 'الكمية'),
             textAlign: TextAlign.center,
-            style: _receiptTextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+            style: _receiptTextStyle(
+              fontFamily: _robotoMonoFamily,
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
         RowCell(
           TextElement(
             _labelFor(english: 'Price', arabic: 'السعر'),
             textAlign: TextAlign.right,
-            style: _receiptTextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+            style: _receiptTextStyle(
+              fontFamily: _robotoMonoFamily,
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
       ],
@@ -759,6 +802,7 @@ class _ReceiptDemoPageState extends State<_ReceiptDemoPage> {
     bool isEmphasized = false,
   }) {
     final TextStyle style = _receiptTextStyle(
+      fontFamily: _robotoMonoFamily,
       fontSize: isEmphasized ? 26 : 22,
       fontWeight: isEmphasized ? FontWeight.w800 : FontWeight.w600,
     );
