@@ -16,8 +16,7 @@ final List<PrinterProfile> _demoProfiles = List<PrinterProfile>.unmodifiable(
         .where(
           (PrinterProfile profile) =>
               profile.media.widthPixels != null &&
-              profile.features.bitImageRaster &&
-              !profile.features.starCommands,
+              profile.features.bitImageRaster,
         )
         .toList(growable: false);
 

@@ -1,6 +1,6 @@
 # esc_pos_full_kit
 
-`esc_pos_full_kit` is a Flutter package for building ESC/POS receipts as a small element tree, rasterizing them with Flutter's text engine, and sending the resulting monochrome image to thermal printers.
+`esc_pos_full_kit` is a Flutter package for building thermal receipts as a small element tree, rasterizing them with Flutter's text engine, and sending the resulting monochrome image to supported receipt printers.
 
 The package is designed around raster-first printing so Arabic, RTL, ligatures, and mixed-direction receipts render correctly without relying on fragile printer code pages.
 
@@ -9,6 +9,7 @@ The package is designed around raster-first printing so Arabic, RTL, ligatures, 
 - Text, row, column, padding, alignment, spacer, divider, barcode, QR, and image elements
 - Receipt rasterization to a monochrome bitmap
 - ESC/POS `GS v 0` raster encoding with feed, cut, drawer pulse, and beep support
+- StarPRNT raster encoding for Star Micronics mC-Print3 MCP30 over a byte transport
 - TCP transport through `NetworkPrinter`
 - Bundled printer profile registry loaded from a local ESC/POS capability dataset
 - `ReceiptPreview` for WYSIWYG preview rendering inside Flutter apps
@@ -43,6 +44,15 @@ await receipt.printTo(
   PrinterProfiles.tmT88V,
   locale: const ui.Locale('ar'),
   textDirection: ui.TextDirection.rtl,
+);
+```
+
+For a Star Micronics mC-Print3 MCP30 on LAN, use the StarPRNT profile:
+
+```dart
+await receipt.printTo(
+  NetworkPrinter('192.168.1.100'),
+  PrinterProfiles.mcp30,
 );
 ```
 

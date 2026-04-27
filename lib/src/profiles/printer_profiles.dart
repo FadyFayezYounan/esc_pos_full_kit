@@ -45,6 +45,9 @@ abstract final class PrinterProfiles {
   /// Star SP2000.
   static const PrinterProfile sp2000 = built_in.sp2000;
 
+  /// Star Micronics mC-Print3 MCP30.
+  static const PrinterProfile mcp30 = built_in.mcp30;
+
   /// Sunmi V2.
   static const PrinterProfile sunmiV2 = built_in.sunmiV2;
 

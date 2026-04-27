@@ -18,6 +18,13 @@ void main() {
         expect(profile.codePages, isNotEmpty);
       }
     });
+
+    test('includes the Star Micronics MCP30 profile', () {
+      expect(PrinterProfiles.byId('MCP30'), same(PrinterProfiles.mcp30));
+      expect(PrinterProfiles.mcp30.features.starCommands, isTrue);
+      expect(PrinterProfiles.mcp30.features.bitImageRaster, isTrue);
+      expect(PrinterProfiles.mcp30.media.widthPixels, 576);
+    });
   });
 
   group('RowElement', () {
@@ -114,6 +121,90 @@ void main() {
         0x56,
         0x00,
       ]);
+
+      rasterizedReceipt.dispose();
+    });
+  });
+
+  group('StarPrntEncoder', () {
+    test('assembles the expected raster stream', () async {
+      final RasterizedReceipt rasterizedReceipt = RasterizedReceipt(
+        image: await _createImage(8, 2),
+        monochromeBits: Uint8List.fromList(<int>[0xA0, 0x40]),
+        widthPixels: 8,
+        heightPixels: 2,
+        widthBytes: 1,
+      );
+
+      final List<int> bytes = StarPrntEncoder.assembleReceipt(
+        rasterizedReceipt,
+        PrinterProfiles.mcp30,
+        const Receipt(children: <PrintElement>[]),
+      );
+
+      expect(bytes, <int>[
+        0x1B,
+        0x40,
+        0x1B,
+        0x1D,
+        0x53,
+        0x01,
+        0x01,
+        0x00,
+        0x02,
+        0x00,
+        0x00,
+        0xA0,
+        0x40,
+        0x1B,
+        0x61,
+        0x03,
+        0x1B,
+        0x64,
+        0x00,
+      ]);
+
+      rasterizedReceipt.dispose();
+    });
+  });
+
+  group('ReceiptEncoder', () {
+    test('routes Star profiles to the StarPRNT encoder', () async {
+      final RasterizedReceipt rasterizedReceipt = RasterizedReceipt(
+        image: await _createImage(8, 1),
+        monochromeBits: Uint8List.fromList(<int>[0xFF]),
+        widthPixels: 8,
+        heightPixels: 1,
+        widthBytes: 1,
+      );
+
+      final List<int> bytes = ReceiptEncoder.assembleReceipt(
+        rasterizedReceipt,
+        PrinterProfiles.mcp30,
+        const Receipt(children: <PrintElement>[]),
+      );
+
+      expect(bytes.sublist(2, 5), <int>[0x1B, 0x1D, 0x53]);
+
+      rasterizedReceipt.dispose();
+    });
+
+    test('routes ESC/POS profiles to the ESC/POS encoder', () async {
+      final RasterizedReceipt rasterizedReceipt = RasterizedReceipt(
+        image: await _createImage(8, 1),
+        monochromeBits: Uint8List.fromList(<int>[0xFF]),
+        widthPixels: 8,
+        heightPixels: 1,
+        widthBytes: 1,
+      );
+
+      final List<int> bytes = ReceiptEncoder.assembleReceipt(
+        rasterizedReceipt,
+        PrinterProfiles.tmT88V,
+        const Receipt(children: <PrintElement>[]),
+      );
+
+      expect(bytes.sublist(2, 5), <int>[0x1D, 0x76, 0x30]);
 
       rasterizedReceipt.dispose();
     });
