@@ -1,5 +1,4 @@
 import 'dart:developer' as developer;
-import 'dart:math' as math;
 import 'dart:typed_data';
 
 import '../contracts/printer_profile.dart';
@@ -10,6 +9,9 @@ import '../receipt/receipt.dart';
 abstract final class StarPrntEncoder {
   /// ESC @
   static const List<int> init = <int>[0x1B, 0x40];
+
+  /// ESC GS P 1
+  static const List<int> selectStandardMode = <int>[0x1B, 0x1D, 0x50, 0x31];
 
   /// ESC a n
   static List<int> feed(int lines) => <int>[0x1B, 0x61, lines.clamp(0, 255)];
@@ -53,6 +55,20 @@ abstract final class StarPrntEncoder {
     ];
   }
 
+  /// ESC X 24-dot fine bit image data for a single band.
+  static List<int> fineBitImageBand({
+    required int widthPixels,
+    required List<int> bits,
+  }) {
+    return <int>[
+      0x1B,
+      0x58,
+      widthPixels & 0xFF,
+      (widthPixels >> 8) & 0xFF,
+      ...bits,
+    ];
+  }
+
   /// Builds the full StarPRNT stream for [receipt].
   static List<int> assembleReceipt(
     RasterizedReceipt rasterizedReceipt,
@@ -64,32 +80,25 @@ abstract final class StarPrntEncoder {
         'Printer profile "${profile.id}" does not use StarPRNT commands.',
       );
     }
-    if (!profile.features.bitImageRaster) {
+    if (!profile.features.bitImageColumn) {
       throw UnsupportedFeatureException(
-        'Printer profile "${profile.id}" does not support StarPRNT raster images.',
+        'Printer profile "${profile.id}" does not support StarPRNT fine bit images.',
       );
     }
 
     final BytesBuilder builder = BytesBuilder(copy: false);
     builder.add(init);
+    builder.add(selectStandardMode);
 
-    const int maxBandRows = 255;
     for (
       int row = 0;
       row < rasterizedReceipt.heightPixels;
-      row += maxBandRows
+      row += _fineBitImageBandRows
     ) {
-      final int bandRows = math.min(
-        maxBandRows,
-        rasterizedReceipt.heightPixels - row,
-      );
-      final int start = row * rasterizedReceipt.widthBytes;
-      final int end = start + (bandRows * rasterizedReceipt.widthBytes);
       builder.add(
-        rasterBand(
-          widthBytes: rasterizedReceipt.widthBytes,
-          heightRows: bandRows,
-          bits: rasterizedReceipt.monochromeBits.sublist(start, end),
+        fineBitImageBand(
+          widthPixels: rasterizedReceipt.widthPixels,
+          bits: _fineBitImageBits(rasterizedReceipt, startRow: row),
         ),
       );
     }
@@ -135,5 +144,32 @@ abstract final class StarPrntEncoder {
       throw UnsupportedFeatureException(message);
     }
     developer.log(message, name: 'esc_pos_full_kit.features');
+  }
+
+  static const int _fineBitImageBandRows = 24;
+
+  static List<int> _fineBitImageBits(
+    RasterizedReceipt rasterizedReceipt, {
+    required int startRow,
+  }) {
+    final Uint8List output = Uint8List(rasterizedReceipt.widthPixels * 3);
+    for (int x = 0; x < rasterizedReceipt.widthPixels; x += 1) {
+      final int columnOffset = x * 3;
+      for (int bandRow = 0; bandRow < _fineBitImageBandRows; bandRow += 1) {
+        final int sourceRow = startRow + bandRow;
+        if (sourceRow >= rasterizedReceipt.heightPixels) {
+          continue;
+        }
+        if (_isBlack(rasterizedReceipt, x, sourceRow)) {
+          output[columnOffset + (bandRow >> 3)] |= 0x80 >> (bandRow & 7);
+        }
+      }
+    }
+    return output;
+  }
+
+  static bool _isBlack(RasterizedReceipt rasterizedReceipt, int x, int y) {
+    final int index = (y * rasterizedReceipt.widthBytes) + (x >> 3);
+    return (rasterizedReceipt.monochromeBits[index] & (0x80 >> (x & 7))) != 0;
   }
 }

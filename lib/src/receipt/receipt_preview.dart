@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 import '../contracts/printer_profile.dart';
+import '../exceptions.dart';
 import 'receipt.dart';
 
 /// A widget that previews the exact raster image sent to the printer.
@@ -122,12 +123,18 @@ class _ReceiptPreviewState extends State<ReceiptPreview> {
     }
 
     if (_error != null) {
+      final String errorText = _error is PrintException
+          ? (_error as PrintException).userFacingMessage
+          : _error.toString();
       return ColoredBox(
         color: widget.backgroundColor,
         child: Center(
           child: Directionality(
             textDirection: widget.textDirection ?? TextDirection.ltr,
-            child: Text(_error.toString(), textAlign: TextAlign.center),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(errorText, textAlign: TextAlign.center),
+            ),
           ),
         ),
       );

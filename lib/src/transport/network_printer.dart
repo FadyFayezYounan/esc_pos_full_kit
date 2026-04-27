@@ -80,7 +80,18 @@ class NetworkPrinter implements PrinterTransport {
     if (socket != null) {
       try {
         await socket.flush();
+        // Half-close the write side, sending a TCP FIN so the printer knows
+        // we are done transmitting.
         await socket.close();
+        // Drain any status bytes the printer may send back before fully
+        // tearing down the socket.  Without this the OS may send a TCP RST
+        // (triggered by unread bytes in the receive buffer), which can cause
+        // some Epson embedded TCP stacks to discard their own receive buffer
+        // and silently drop the print job.
+        await socket.drain<Object?>().timeout(const Duration(seconds: 2));
+      } catch (_) {
+        // Timeout is expected (printers rarely close their side); errors here
+        // are non-fatal.
       } finally {
         socket.destroy();
       }

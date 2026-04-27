@@ -15,4 +15,7 @@ flutter pub get
 flutter run
 ```
 
-By default the example uses `192.168.1.100:9100`. Change the host and port in the UI before printing to a real printer.
+By default the example uses the Star Micronics `MCP30` profile and
+`192.168.100.120:9100`, matching the attached mC-Print3 self-test print.
+Change the host, port, or printer profile in the UI before printing to a
+different device.

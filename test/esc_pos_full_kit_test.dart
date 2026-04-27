@@ -130,7 +130,7 @@ void main() {
   });
 
   group('StarPrntEncoder', () {
-    test('assembles the expected raster stream', () async {
+    test('assembles the expected fine bit image stream', () async {
       final RasterizedReceipt rasterizedReceipt = RasterizedReceipt(
         image: await _createImage(8, 2),
         monochromeBits: Uint8List.fromList(<int>[0xA0, 0x40]),
@@ -150,15 +150,36 @@ void main() {
         0x40,
         0x1B,
         0x1D,
-        0x53,
-        0x01,
-        0x01,
+        0x50,
+        0x31,
+        0x1B,
+        0x58,
+        0x08,
         0x00,
-        0x02,
+        0x80,
         0x00,
         0x00,
-        0xA0,
         0x40,
+        0x00,
+        0x00,
+        0x80,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
         0x1B,
         0x61,
         0x03,
@@ -258,7 +279,7 @@ void main() {
         const Receipt(children: <PrintElement>[]),
       );
 
-      expect(bytes.take(6), <int>[0x1B, 0x40, 0x1B, 0x1D, 0x53, 0x01]);
+      expect(bytes.take(6), <int>[0x1B, 0x40, 0x1B, 0x1D, 0x50, 0x31]);
 
       rasterizedReceipt.dispose();
     });

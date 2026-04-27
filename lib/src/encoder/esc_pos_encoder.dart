@@ -11,6 +11,50 @@ abstract final class EscPosEncoder {
   /// ESC @
   static const List<int> init = <int>[0x1B, 0x40];
 
+  /// Recovery preamble sent before every print job.
+  ///
+  /// A prior job may have left the Epson printer in one of two stuck states:
+  ///
+  /// **1 — Binary-data countdown mode.**
+  /// StarPRNT raster bands use `ESC X nL nH [bits]`. An Epson ESC/POS parser
+  /// may interpret `ESC X` as a binary-mode command and begin counting
+  /// `nL + nH × 256` bytes of incoming data before resuming normal parsing.
+  /// The raw pixel bytes that follow typically contain lone `0x1B` (ESC) bytes
+  /// which start further nested sub-commands, potentially chaining multiple
+  /// binary-data countdowns. NUL (0x00) is the only byte that is a universal
+  /// no-op in both text mode and binary-data mode: in text mode it is ignored;
+  /// in binary-data mode it counts toward the pending payload without
+  /// side-effects. 4 096 NULs safely exceeds the largest plausible binary
+  /// payload for any band of any printer width in the built-in profiles
+  /// (≤ 832 px wide ≡ 2 496 bytes per 24-row band).
+  ///
+  /// **2 — Page Mode.**
+  /// The raw bitmap bytes of a StarPRNT job contain arbitrary pixel values.
+  /// The two-byte sequence `0x1B 0x4C` (`ESC L`) is virtually guaranteed to
+  /// appear inside a complex receipt image. On Epson TM printers `ESC L` is
+  /// the "Enter Page Mode" command. Once in Page Mode every subsequent byte —
+  /// including `ESC @` — is silently stored in the page buffer instead of
+  /// being executed. The printer reports no error and acknowledges the TCP
+  /// data, but nothing prints. A physical power cycle clears Page Mode, which
+  /// is why restart fixes the problem.
+  ///
+  /// `ESC S` (`0x1B 0x53`) is the "Return to Standard Mode" command for Epson
+  /// TM printers. It must be sent BEFORE `ESC @` because `ESC @` is ignored
+  /// while in Page Mode. On printers that are already in Standard Mode `ESC S`
+  /// is defined to be a no-op, so it is always safe to send.
+  ///
+  /// Sequence: [4 096 × NUL] → ESC S → CAN → ESC @
+  static final List<int> _recoveryInit = <int>[
+    // 4 096 × NUL — exhaust any pending binary-data countdown.
+    ...List<int>.filled(4096, 0x00),
+    // ESC S — return to Standard Mode from Page Mode (no-op if already there).
+    0x1B, 0x53,
+    // CAN — cancel / clear the line print buffer.
+    0x18,
+    // ESC @ — initialise printer to power-on defaults.
+    0x1B, 0x40,
+  ];
+
   /// ESC d n
   static List<int> feed(int lines) => <int>[0x1B, 0x64, lines.clamp(0, 255)];
 
@@ -63,7 +107,7 @@ abstract final class EscPosEncoder {
     }
 
     final BytesBuilder builder = BytesBuilder(copy: false);
-    builder.add(init);
+    builder.add(_recoveryInit);
 
     const int maxBandRows = 255;
     for (

@@ -16,7 +16,8 @@ final List<PrinterProfile> _demoProfiles = List<PrinterProfile>.unmodifiable(
         .where(
           (PrinterProfile profile) =>
               profile.media.widthPixels != null &&
-              profile.features.bitImageRaster &&
+              (profile.features.bitImageRaster ||
+                  profile.features.bitImageColumn) &&
               switch (profile.commandDialect) {
                 PrinterCommandDialect.escPos => true,
                 PrinterCommandDialect.starPrnt => true,
@@ -28,6 +29,11 @@ final List<PrinterProfile> _demoProfiles = List<PrinterProfile>.unmodifiable(
         ? compatibleProfiles
         : PrinterProfiles.builtIn;
   }(),
+);
+
+PrinterProfile get _defaultDemoProfile => _demoProfiles.firstWhere(
+  (PrinterProfile profile) => profile.id == PrinterProfiles.mcp30.id,
+  orElse: () => _demoProfiles.first,
 );
 
 const List<_DemoLineItem> _demoLineItems = <_DemoLineItem>[
@@ -146,6 +152,7 @@ class _ReceiptDemoPageState extends State<_ReceiptDemoPage> {
   _ReceiptLanguage _language = _ReceiptLanguage.mixed;
   bool _isPrinting = false;
   String? _statusMessage;
+  bool _statusIsError = false;
 
   @override
   void initState() {
@@ -154,10 +161,7 @@ class _ReceiptDemoPageState extends State<_ReceiptDemoPage> {
     _hostController = TextEditingController(text: '192.168.8.52');
     _portController = TextEditingController(text: '9100');
     _robotoMonoFamily = GoogleFonts.robotoMono().fontFamily!;
-    _selectedProfile = _demoProfiles.firstWhere(
-      (PrinterProfile profile) => profile.id == PrinterProfiles.tmT88V.id,
-      orElse: () => _demoProfiles.first,
-    );
+    _selectedProfile = _defaultDemoProfile;
   }
 
   @override
@@ -555,13 +559,22 @@ class _ReceiptDemoPageState extends State<_ReceiptDemoPage> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFF4E7),
+                  color: _statusIsError
+                      ? const Color(0xFFFFEAEA)
+                      : const Color(0xFFFFF4E7),
                   borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: const Color(0xFFE8C8A8)),
+                  border: Border.all(
+                    color: _statusIsError
+                        ? const Color(0xFFE8A8A8)
+                        : const Color(0xFFE8C8A8),
+                  ),
                 ),
                 child: Text(
                   _statusMessage!,
-                  style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    height: 1.4,
+                    color: _statusIsError ? const Color(0xFFB71C1C) : null,
+                  ),
                 ),
               ),
             if (_statusMessage != null) const SizedBox(height: 16),
@@ -836,6 +849,7 @@ class _ReceiptDemoPageState extends State<_ReceiptDemoPage> {
       setState(() {
         _statusMessage =
             'Enter a valid printer host and TCP port before printing.';
+        _statusIsError = true;
       });
       return;
     }
@@ -843,6 +857,7 @@ class _ReceiptDemoPageState extends State<_ReceiptDemoPage> {
     setState(() {
       _isPrinting = true;
       _statusMessage = 'Sending the rasterized receipt to $host:$port...';
+      _statusIsError = false;
     });
 
     try {
@@ -859,17 +874,34 @@ class _ReceiptDemoPageState extends State<_ReceiptDemoPage> {
 
       setState(() {
         _statusMessage = 'Receipt sent successfully to $host:$port.';
+        _statusIsError = false;
       });
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Receipt sent to $host:$port')));
-    } catch (error) {
-      if (!mounted) {
-        return;
-      }
-
+    } on ConnectionException catch (error) {
+      if (!mounted) return;
       setState(() {
-        _statusMessage = 'Printing failed: $error';
+        _statusMessage = error.userFacingMessage;
+        _statusIsError = true;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Connection failed — ${error.message}')),
+      );
+    } on PrintException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _statusMessage = error.userFacingMessage;
+        _statusIsError = true;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Printing failed: ${error.message}')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _statusMessage = 'An unexpected error occurred while printing:\n$error';
+        _statusIsError = true;
       });
       ScaffoldMessenger.of(
         context,
@@ -886,14 +918,12 @@ class _ReceiptDemoPageState extends State<_ReceiptDemoPage> {
   void _resetDefaults() {
     setState(() {
       _merchantController.text = 'Wasfa Roastery';
-      _hostController.text = '192.168.1.100';
+      _hostController.text = '192.168.100.120';
       _portController.text = '9100';
-      _selectedProfile = _demoProfiles.firstWhere(
-        (PrinterProfile profile) => profile.id == PrinterProfiles.tmT88V.id,
-        orElse: () => _demoProfiles.first,
-      );
+      _selectedProfile = _defaultDemoProfile;
       _language = _ReceiptLanguage.mixed;
       _statusMessage = 'Sample values restored.';
+      _statusIsError = false;
     });
   }
 

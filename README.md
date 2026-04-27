@@ -9,7 +9,7 @@ The package is designed around raster-first printing so Arabic, RTL, ligatures, 
 - Text, row, column, padding, alignment, spacer, divider, barcode, QR, and image elements
 - Receipt rasterization to a monochrome bitmap
 - ESC/POS `GS v 0` raster encoding with feed, cut, drawer pulse, and beep support
-- StarPRNT raster encoding with feed, cut, and drawer pulse support
+- StarPRNT 24-dot fine bit-image encoding with feed, cut, and drawer pulse support
 - TCP transport through `NetworkPrinter`
 - Bundled printer profile registry with ESC/POS and StarPRNT profiles
 - `ReceiptPreview` for WYSIWYG preview rendering inside Flutter apps

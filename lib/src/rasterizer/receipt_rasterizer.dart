@@ -34,9 +34,9 @@ final class ReceiptRasterizer {
         'Printer profile "${profile.id}" does not define a printable width.',
       );
     }
-    if (!profile.features.bitImageRaster) {
+    if (!profile.features.bitImageRaster && !profile.features.bitImageColumn) {
       throw UnsupportedFeatureException(
-        'Printer profile "${profile.id}" does not support raster bit images.',
+        'Printer profile "${profile.id}" does not support image printing.',
       );
     }
 
@@ -71,12 +71,7 @@ final class ReceiptRasterizer {
       final ui.PictureRecorder recorder = ui.PictureRecorder();
       final ui.Canvas canvas = ui.Canvas(
         recorder,
-        ui.Rect.fromLTWH(
-          0,
-          0,
-          scaledWidth.toDouble(),
-          scaledHeight.toDouble(),
-        ),
+        ui.Rect.fromLTWH(0, 0, scaledWidth.toDouble(), scaledHeight.toDouble()),
       );
       if (supersample != 1) {
         canvas.scale(supersample.toDouble());
@@ -201,10 +196,7 @@ final class ReceiptRasterizer {
     int height,
   ) async {
     final ui.ImmutableBuffer buffer = await ui.ImmutableBuffer.fromUint8List(
-      rgba.buffer.asUint8List(
-        rgba.offsetInBytes,
-        rgba.lengthInBytes,
-      ),
+      rgba.buffer.asUint8List(rgba.offsetInBytes, rgba.lengthInBytes),
     );
     try {
       final ui.ImageDescriptor descriptor = ui.ImageDescriptor.raw(
